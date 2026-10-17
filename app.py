@@ -71,7 +71,9 @@ def generar_pdf(
       0, 6, f"Fecha de Término: {fecha_termino.strftime('%d/%m/%Y')}", ln=True
   )
   pdf.cell(0, 6, f"Tiempo Total Trabajado: {dias_trabajados} días", ln=True)
-  pdf.cell(0, 6, f"Remuneración Imponible Total: ${remuneracion:,.0f} CLP", ln=True)
+  pdf.cell(
+      0, 6, f"Remuneración Imponible Total: ${remuneracion:,.0f} CLP", ln=True
+  )
   pdf.cell(0, 6, f"Causal de Término: {motivo}", ln=True)
   pdf.cell(0, 6, f"Aviso Previo Dado: {aviso}", ln=True)
   pdf.ln(5)
@@ -97,7 +99,7 @@ def generar_pdf(
   pdf.cell(
       0,
       6,
-      f"Feriado Proporcional ({dias_vacaciones:.1f} días habiles pendientes):"
+      f"Feriado Proporcional ({dias_vacaciones:.1f} días hábiles pendientes):"
       f" ${monto_feriado:,.0f} CLP",
       ln=True,
   )
@@ -105,7 +107,9 @@ def generar_pdf(
 
   # Total
   pdf.set_font("Helvetica", "B", 12)
-  pdf.cell(0, 8, f"TOTAL ESTIMADO FINIQUITO: ${total_finiquito:,.0f} CLP", ln=True)
+  pdf.cell(
+      0, 8, f"TOTAL ESTIMADO FINIQUITO: ${total_finiquito:,.0f} CLP", ln=True
+  )
   pdf.ln(10)
 
   # Nota legal
@@ -263,7 +267,11 @@ if st.button("📊 Calcular Finiquito"):
         total_finiquito,
     )
 
+    nombre_pdf = f"finiquito_estimado_{fecha_termino.strftime('%Y%m%d')}.pdf"
+
     st.download_button(
         label="📄 Descargar Comprobante en PDF",
         data=bytes(pdf_bytes),
-        file_name=f"finiquito_estimado_{fecha_termino.strftime('%Y%m%d')}.pdf,
+        file_name=nombre_pdf,
+        mime="application/pdf",
+    )

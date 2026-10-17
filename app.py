@@ -1,6 +1,4 @@
 import datetime
-import io
-import math
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 import streamlit as st
@@ -18,102 +16,6 @@ st.set_page_config(
             " **Adrian Cazor**\nIngeniería en Administración de Empresas."
         ),
     },
-)
-
-# 2. INYECCIÓN DE ESTILOS CSS (ALTO CONTRASTE Y ENMARCADO AZUL CORPORATIVO)
-st.markdown(
-    """
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-
-    .stApp {
-        background-color: #f8fafc !important;
-        color: #000000 !important;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-        border-left: 8px solid #1e3a8a !important;
-        border-right: 8px solid #1e3a8a !important;
-        box-sizing: border-box !important;
-    }
-
-    p, label, span, .stMarkdown, .stRadio, .stNumberInput, .stDateInput {
-        color: #000000 !important;
-        font-weight: 500 !important;
-    }
-
-    h2, h3, h4 {
-        color: #0f172a !important;
-        font-weight: 700 !important;
-        margin-top: 1.5rem !important;
-        margin-bottom: 0.75rem !important;
-    }
-
-    h1 {
-        color: #1e3a8a !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.5px;
-    }
-
-    div[data-baseweb="input"] input, div[data-baseweb="select"] {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        border-radius: 8px !important;
-    }
-
-    div[data-baseweb="select"] > div {
-        border: 1.5px solid #cbd5e1 !important;
-        background-color: #ffffff !important;
-    }
-
-    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"], li[role="option"] {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        font-weight: 500 !important;
-    }
-
-    div.stButton > button, div.stDownloadButton > button {
-        background: linear-gradient(90deg, #1e3a8a 0%, #1e40af 100%) !important;
-        color: #ffffff !important;
-        font-weight: 600 !important;
-        font-size: 1.1rem !important;
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 0.6rem 1.2rem !important;
-        margin-top: 0.5rem !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2) !important;
-    }
-
-    div.stButton > button:hover, div.stDownloadButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(30, 58, 138, 0.4) !important;
-    }
-
-    div[data-testid="stMetricValue"] {
-        font-size: 2.2rem !important;
-        font-weight: 800 !important;
-        color: #15803d !important;
-    }
-
-    .footer {
-        margin-top: 3rem;
-        padding: 1.5rem;
-        text-align: center;
-        background-color: #f1f5f9;
-        border: 1px solid #cbd5e1;
-        border-top: 3px solid #1e3a8a;
-        border-radius: 10px;
-    }
-    .footer p {
-        margin: 0;
-        color: #334155 !important;
-        font-size: 0.95rem;
-    }
-    .footer strong {
-        color: #1e3a8a !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
 )
 
 
@@ -326,13 +228,13 @@ def generar_pdf_comprobante(
 
 
 # --- ENCABEZADO Y PRESENTACIÓN ---
-st.title("⚖️ Calculadora de Finiquito Laboral")
+st.title("⚖️ Calculadora de Finiquito Laboral Chile")
 st.write(
     "Herramienta profesional para calcular el finiquito de trabajo según el"
     " Código del Trabajo de Chile."
 )
 
-st.markdown("---")
+st.divider()
 
 FECHA_MINIMA = datetime.date(2000, 1, 1)
 FECHA_MAXIMA = datetime.date.today()
@@ -362,7 +264,7 @@ sueldo_base = st.number_input(
     "Sueldo Base Mensual (CLP $)", min_value=0, value=600000, step=10000
 )
 
-st.markdown("### Causal de Término de Contrato")
+st.subheader("Causal de Término de Contrato")
 motivo = st.selectbox(
     "Seleccione la causal legal correspondiente:",
     [
@@ -371,7 +273,6 @@ motivo = st.selectbox(
         "Vencimiento del plazo del contrato (Art. 159 N° 4)",
         "Mutuo acuerdo entre las partes (Art. 159 N° 1)",
     ],
-    label_visibility="collapsed",
 )
 
 if "Art. 161" in motivo:
@@ -385,11 +286,9 @@ else:
       " servicio. Solo considera feriado proporcional y haberes pendientes."
   )
 
-st.markdown("### ¿Se dio aviso previo con 30 días de anticipación?")
+st.subheader("¿Se dio aviso previo con 30 días de anticipación?")
 aviso_previo = st.radio(
-    "Aviso previo",
-    ["Sí", "No (Corresponde indemnización)"],
-    label_visibility="collapsed",
+    "Aviso previo", ["Sí", "No (Corresponde indemnización)"]
 )
 
 # --- SECCIÓN 2: HABERES Y TURNOS EXTRAS ---
@@ -409,9 +308,9 @@ dias_vacaciones_tomadas = st.number_input(
     value=0,
 )
 
-st.markdown("---")
+st.divider()
 
-# --- LÓGICA DE CÁLCULO Y GENERACIÓN DE COMPROBANTE ---
+# --- LÓGICA DE CÁLCULO ---
 if st.button("📊 Calcular Finiquito Exacto", use_container_width=True):
   if fecha_termino < fecha_inicio:
     st.error(
@@ -489,7 +388,7 @@ if st.button("📊 Calcular Finiquito Exacto", use_container_width=True):
       )
       st.session_state["calculado"] = True
 
-# Despliegue persistente de resultados y botón de descarga PDF
+# Despliegue de resultados y descarga de PDF
 if st.session_state.get("calculado", False):
   st.success("¡Cálculo realizado con éxito!")
   st.metric(
@@ -500,7 +399,7 @@ if st.session_state.get("calculado", False):
   st.subheader("Desglose detallado del finiquito:")
   st.markdown(st.session_state["desglose_texto"])
 
-  st.markdown("---")
+  st.divider()
   st.subheader("📄 Descargar Comprobante")
   st.download_button(
       label="⬇️ Descargar Comprobante en PDF",
@@ -512,13 +411,8 @@ if st.session_state.get("calculado", False):
       use_container_width=True,
   )
 
-# --- PIE DE PÁGINA ---
-st.markdown(
-    """
-    <div class="footer">
-        <p>👨‍💻 Aplicación desarrollada por <strong>Adrian Cazor</strong></p>
-        <p>Ingeniería en Administración de Empresas</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
+st.divider()
+st.caption(
+    "👨‍💻 Aplicación desarrollada por **Adrian Cazor** | Ingeniería en"
+    " Administración de Empresas"
 )

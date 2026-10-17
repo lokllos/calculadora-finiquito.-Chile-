@@ -36,6 +36,16 @@ class PDF(FPDF):
         ln=True,
         align="C",
     )
+    self.set_font("Helvetica", "I", 8)
+    self.cell(
+        0,
+        5,
+        "Desarrollado por Adrián Cazorla - Ingeniería en Administración de"
+        " Empresas",
+        border=False,
+        ln=True,
+        align="C",
+    )
     self.ln(5)
 
   def footer(self):
@@ -139,6 +149,10 @@ def generar_pdf(
 
 # --- INTERFAZ STREAMLIT ---
 st.title("⚖️ Calculadora de Finiquito Laboral Chile")
+st.caption(
+    "👨‍💻 **Desarrollado por Adrián Cazorla** | Ingeniería en Administración de"
+    " Empresas"
+)
 st.markdown(
     "Calcula fácilmente tu estimación de finiquito según el **Código del"
     " Trabajo de Chile**."
@@ -293,3 +307,9 @@ if btn_calcular:
         mime="application/pdf",
         use_container_width=True,
     )
+
+st.markdown("---")
+st.caption(
+    "📌 *Desarrollado por **Adrián Cazorla** | Ingeniería en Administración de"
+    " Empresas*"
+)

@@ -40,7 +40,7 @@ class PDF(FPDF):
     self.cell(
         0,
         5,
-        "Desarrollado por Adrián Cazor - Ingeniería en Administración de"
+        "Desarrollado por Adrián Cazor- Ingeniería en Administración de"
         " Empresas",
         border=False,
         ln=True,

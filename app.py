@@ -9,6 +9,11 @@ st.set_page_config(
 )
 
 
+# Función para formatear montos en pesos chilenos ($ 1.000.000 CLP)
+def formatear_clp(monto):
+  return f"${monto:,.0f}".replace(",", ".") + " CLP"
+
+
 # Clase para la generación del reporte PDF
 class PDF(FPDF):
 
@@ -72,7 +77,10 @@ def generar_pdf(
   )
   pdf.cell(0, 6, f"Tiempo Total Trabajado: {dias_trabajados} días", ln=True)
   pdf.cell(
-      0, 6, f"Remuneración Imponible Total: ${remuneracion:,.0f} CLP", ln=True
+      0,
+      6,
+      f"Remuneración Imponible Total: {formatear_clp(remuneracion)}",
+      ln=True,
   )
   pdf.cell(0, 6, f"Causal de Término: {motivo}", ln=True)
   pdf.cell(0, 6, f"Aviso Previo Dado: {aviso}", ln=True)
@@ -87,20 +95,20 @@ def generar_pdf(
       0,
       6,
       f"Indemnización por Años de Servicio ({anios_indemnizacion} años):"
-      f" ${monto_anios:,.0f} CLP",
+      f" {formatear_clp(monto_anios)}",
       ln=True,
   )
   pdf.cell(
       0,
       6,
-      f"Indemnización Sustitutiva Mes de Aviso: ${monto_aviso:,.0f} CLP",
+      f"Indemnización Sustitutiva Mes de Aviso: {formatear_clp(monto_aviso)}",
       ln=True,
   )
   pdf.cell(
       0,
       6,
       f"Feriado Proporcional ({dias_vacaciones:.1f} días hábiles pendientes):"
-      f" ${monto_feriado:,.0f} CLP",
+      f" {formatear_clp(monto_feriado)}",
       ln=True,
   )
   pdf.ln(5)
@@ -108,7 +116,10 @@ def generar_pdf(
   # Total
   pdf.set_font("Helvetica", "B", 12)
   pdf.cell(
-      0, 8, f"TOTAL ESTIMADO FINIQUITO: ${total_finiquito:,.0f} CLP", ln=True
+      0,
+      8,
+      f"TOTAL ESTIMADO FINIQUITO: {formatear_clp(total_finiquito)}",
+      ln=True,
   )
   pdf.ln(10)
 
@@ -146,7 +157,6 @@ with col2:
 
 st.header("2. Remuneración y Causal")
 
-# Entrada ajustada según Art. 172 del Código del Trabajo
 remuneracion_imponible = st.number_input(
     "Remuneración Mensual Imponible Total (CLP $)",
     min_value=0,
@@ -180,6 +190,7 @@ if "Art. 161" in motivo:
   aviso_previo = st.radio(
       "¿El empleador le dio el aviso previo con 30 días de anticipación?",
       ["Sí", "No"],
+      horizontal=True,
   )
 
 st.header("3. Vacaciones / Feriado Anual")
@@ -190,8 +201,14 @@ dias_vacaciones_tomadas = st.number_input(
     step=0.5,
 )
 
-# --- LÓGICA DE CÁLCULO ---
-if st.button("📊 Calcular Finiquito"):
+st.write("")  # Espaciado
+
+# --- LÓGICA DE CÁLCULO Y BOTÓN ---
+btn_calcular = st.button(
+    "📊 Calcular Finiquito", type="primary", use_container_width=True
+)
+
+if btn_calcular:
   if fecha_termino <= fecha_inicio:
     st.error(
         "La fecha de término debe ser posterior a la fecha de inicio del"
@@ -235,20 +252,20 @@ if st.button("📊 Calcular Finiquito"):
     # --- RESULTADOS EN PANTALLA ---
     st.success("### Resultado de la Estimación")
 
-    st.metric("Total Estimado de Finiquito", f"${total_finiquito:,.0f} CLP")
+    st.metric("Total Estimado de Finiquito", formatear_clp(total_finiquito))
 
     st.markdown("#### Desglose de Rubros:")
     st.write(
         f"- **Indemnización por Años de Servicio ({anios_indemnizacion}"
-        f" años):** ${monto_anios:,.0f} CLP"
+        f" años):** {formatear_clp(monto_anios)}"
     )
     st.write(
         "- **Indemnización Sustitutiva Mes de Aviso:**"
-        f" ${monto_aviso:,.0f} CLP"
+        f" {formatear_clp(monto_aviso)}"
     )
     st.write(
         f"- **Feriado Proporcional ({dias_vacaciones_pendientes:.1f} días"
-        f" pendientes):** ${monto_feriado:,.0f} CLP"
+        f" pendientes):** {formatear_clp(monto_feriado)}"
     )
 
     # --- BOTÓN DESCARGA PDF ---
@@ -274,4 +291,5 @@ if st.button("📊 Calcular Finiquito"):
         data=bytes(pdf_bytes),
         file_name=nombre_pdf,
         mime="application/pdf",
+        use_container_width=True,
     )

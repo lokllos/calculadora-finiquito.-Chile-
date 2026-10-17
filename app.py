@@ -1,272 +1,168 @@
-import datetime
+from datetime import datetime
+import io
 from fpdf import FPDF
-from fpdf.enums import XPos, YPos
 import streamlit as st
 
-# 1. Configuración de la página web
+# Configuración de la página
 st.set_page_config(
-    page_title="Calculadora de Finiquito Chile",
-    page_icon="⚖️",
-    layout="centered",
-    menu_items={
-        "Get Help": None,
-        "Report a bug": None,
-        "About": (
-            "### Calculadora de Finiquito Laboral Chile\nDesarrollada por"
-            " **Adrian Cazor**\nIngeniería en Administración de Empresas."
-        ),
-    },
+    page_title="Calculadora de Finiquito Chile", page_icon="⚖️", layout="centered"
 )
 
 
-def formato_clp(monto):
-  return f"${int(round(monto)):,}".replace(",", ".")
+# Clase para la generación del reporte PDF
+class PDF(FPDF):
+
+  def header(self):
+    self.set_font("Helvetica", "B", 14)
+    self.cell(
+        0,
+        10,
+        "COMPROBANTE DE ESTIMACIÓN DE FINIQUITO LABORAL",
+        border=False,
+        ln=True,
+        align="C",
+    )
+    self.set_font("Helvetica", "I", 9)
+    self.cell(
+        0,
+        5,
+        "Según normativa del Código del Trabajo de Chile",
+        border=False,
+        ln=True,
+        align="C",
+    )
+    self.ln(5)
+
+  def footer(self):
+    self.set_y(-15)
+    self.set_font("Helvetica", "I", 8)
+    self.cell(
+        0,
+        10,
+        f"Página {self.page_no()} - Documento informativo no vinculante",
+        align="C",
+    )
 
 
-def limpiar_texto(texto):
-  replacements = {
-      "Á": "A",
-      "É": "E",
-      "Í": "I",
-      "Ó": "O",
-      "Ú": "U",
-      "á": "a",
-      "é": "e",
-      "í": "i",
-      "ó": "o",
-      "ú": "u",
-      "Ñ": "N",
-      "ñ": "n",
-      "°": " deg.",
-  }
-  for orig, repl in replacements.items():
-    texto = texto.replace(orig, repl)
-  return texto
-
-
-# --- FUNCIÓN PARA GENERAR EL COMPROBANTE PDF EN MEMORIA ---
-def generar_pdf_comprobante(
-    fecha_ini,
-    fecha_ter,
-    sueldo,
-    causal,
+def generar_pdf(
+    fecha_inicio,
+    fecha_termino,
+    remuneracion,
+    motivo,
     aviso,
-    dias_trab,
-    monto_anos,
+    dias_trabajados,
+    anios_indemnizacion,
+    monto_anios,
     monto_aviso,
+    dias_vacaciones,
     monto_feriado,
-    monto_ext,
-    total,
+    total_finiquito,
 ):
-  pdf = FPDF()
+  pdf = PDF()
   pdf.add_page()
-  pdf.set_auto_page_break(auto=True, margin=15)
+  pdf.set_font("Helvetica", size=10)
 
-  # Encabezado
-  pdf.set_font("Helvetica", "B", 15)
-  pdf.set_text_color(30, 58, 138)
-  pdf.cell(
-      0,
-      10,
-      "COMPROBANTE DE CALCULO DE FINIQUITO LABORAL",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-      align="C",
-  )
-  pdf.set_font("Helvetica", "", 10)
-  pdf.set_text_color(100, 100, 100)
-  pdf.cell(
-      0,
-      6,
-      f"Fecha de emision: {datetime.date.today().strftime('%d/%m/%Y')}",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-      align="C",
-  )
-  pdf.ln(6)
-
-  # Línea divisoria
-  pdf.set_draw_color(30, 58, 138)
-  pdf.set_line_width(0.8)
-  pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-  pdf.ln(6)
-
-  # Sección 1: Datos Contractuales
+  # Resumen de Datos
   pdf.set_font("Helvetica", "B", 11)
-  pdf.set_text_color(15, 23, 42)
+  pdf.cell(0, 7, "1. Datos del Contrato y Remuneración", ln=True)
+  pdf.set_font("Helvetica", size=10)
+  pdf.cell(0, 6, f"Fecha de Inicio: {fecha_inicio.strftime('%d/%m/%Y')}", ln=True)
   pdf.cell(
-      0, 7, "1. RESUMEN CONTRACTUAL", new_x=XPos.LMARGIN, new_y=YPos.NEXT
+      0, 6, f"Fecha de Término: {fecha_termino.strftime('%d/%m/%Y')}", ln=True
   )
+  pdf.cell(0, 6, f"Tiempo Total Trabajado: {dias_trabajados} días", ln=True)
+  pdf.cell(0, 6, f"Remuneración Imponible Total: ${remuneracion:,.0f} CLP", ln=True)
+  pdf.cell(0, 6, f"Causal de Término: {motivo}", ln=True)
+  pdf.cell(0, 6, f"Aviso Previo Dado: {aviso}", ln=True)
+  pdf.ln(5)
 
-  pdf.set_font("Helvetica", "", 10)
-  pdf.set_text_color(0, 0, 0)
-  pdf.cell(
-      0,
-      6,
-      f"Periodo trabajado: Desde {fecha_ini.strftime('%d/%m/%Y')} hasta"
-      f" {fecha_ter.strftime('%d/%m/%Y')} ({dias_trab} dias)",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-  )
-  pdf.cell(
-      0,
-      6,
-      f"Sueldo Base Mensual: {formato_clp(sueldo)} CLP",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-  )
-  pdf.cell(
-      0,
-      6,
-      f"Causal de termino: {limpiar_texto(causal)}",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-  )
-  pdf.cell(
-      0,
-      6,
-      f"Aviso previo (30 dias): {limpiar_texto(aviso)}",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-  )
-  pdf.ln(6)
-
-  # Sección 2: Desglose de Haberes
+  # Detalle de Conceptos
   pdf.set_font("Helvetica", "B", 11)
-  pdf.set_text_color(15, 23, 42)
-  pdf.cell(
-      0,
-      7,
-      "2. DESGLOSE DE INDEMNIZACIONES Y HABERES",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-  )
+  pdf.cell(0, 7, "2. Detalle de Indemnizaciones y Haberes", ln=True)
+  pdf.set_font("Helvetica", size=10)
 
-  pdf.set_font("Helvetica", "", 10)
   pdf.cell(
       0,
       6,
-      f"- Indemnizacion por Anos de Servicio: {formato_clp(monto_anos)} CLP",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
+      f"Indemnización por Años de Servicio ({anios_indemnizacion} años):"
+      f" ${monto_anios:,.0f} CLP",
+      ln=True,
   )
   pdf.cell(
       0,
       6,
-      f"- Indemnizacion Mes de Aviso Previo: {formato_clp(monto_aviso)} CLP",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
+      f"Indemnización Sustitutiva Mes de Aviso: ${monto_aviso:,.0f} CLP",
+      ln=True,
   )
   pdf.cell(
       0,
       6,
-      f"- Feriado Proporcional (Vacaciones): {formato_clp(monto_feriado)} CLP",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
+      f"Feriado Proporcional ({dias_vacaciones:.1f} días habiles pendientes):"
+      f" ${monto_feriado:,.0f} CLP",
+      ln=True,
   )
-  pdf.cell(
-      0,
-      6,
-      f"- Turnos / Haberes Pendientes: {formato_clp(monto_ext)} CLP",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-  )
-  pdf.ln(6)
+  pdf.ln(5)
 
-  # Recuadro Total
-  pdf.set_fill_color(241, 245, 249)
-  pdf.set_draw_color(21, 128, 61)
-  pdf.rect(10, pdf.get_y(), 190, 16, style="FD")
-
-  pdf.set_xy(15, pdf.get_y() + 3)
+  # Total
   pdf.set_font("Helvetica", "B", 12)
-  pdf.set_text_color(21, 128, 61)
-  pdf.cell(
-      0,
-      10,
-      f"TOTAL ESTIMADO A PAGAR: {formato_clp(total)} CLP",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-  )
-  pdf.ln(12)
+  pdf.cell(0, 8, f"TOTAL ESTIMADO FINIQUITO: ${total_finiquito:,.0f} CLP", ln=True)
+  pdf.ln(10)
 
   # Nota legal
   pdf.set_font("Helvetica", "I", 8)
-  pdf.set_text_color(100, 100, 100)
   pdf.multi_cell(
       0,
       4,
-      "Nota: Este documento constituye una estimacion informativa basada en"
-      " las disposiciones del Codigo del Trabajo de Chile y no reemplaza el"
-      " finiquito oficial firmado ante ministro de fe.",
-  )
-  pdf.ln(8)
-
-  # Firma institucional
-  pdf.set_font("Helvetica", "B", 10)
-  pdf.set_text_color(30, 58, 138)
-  pdf.cell(
-      0,
-      5,
-      "Desarrollado por: Adrian Cazor",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-      align="C",
-  )
-  pdf.set_font("Helvetica", "", 9)
-  pdf.set_text_color(71, 85, 105)
-  pdf.cell(
-      0,
-      5,
-      "Ingenieria en Administracion de Empresas",
-      new_x=XPos.LMARGIN,
-      new_y=YPos.NEXT,
-      align="C",
+      "Nota: Este documento constituye una estimación informativa basada en la"
+      " normativa del Código del Trabajo de Chile (Art. 159, 161, 163, 172 y"
+      " 73). No reemplaza el finiquito legal ratificado ante un ministro de fe"
+      " o la Inspección del Trabajo.",
   )
 
-  return bytes(pdf.output())
+  return pdf.output()
 
 
-# --- ENCABEZADO Y PRESENTACIÓN ---
+# --- INTERFAZ STREAMLIT ---
 st.title("⚖️ Calculadora de Finiquito Laboral Chile")
-st.write(
-    "Herramienta profesional para calcular el finiquito de trabajo según el"
-    " Código del Trabajo de Chile."
+st.markdown(
+    "Calcula fácilmente tu estimación de finiquito según el **Código del"
+    " Trabajo de Chile**."
 )
 
-st.divider()
-
-FECHA_MINIMA = datetime.date(2000, 1, 1)
-FECHA_MAXIMA = datetime.date.today()
-
-# --- SECCIÓN 1: DATOS CONTRACTUALES ---
-st.header("1. Datos Contractuales y Fechas")
-
+st.header("1. Datos del Contrato")
 col1, col2 = st.columns(2)
+
 with col1:
   fecha_inicio = st.date_input(
-      "Fecha de Inicio de Contrato",
-      value=datetime.date(2022, 1, 1),
-      min_value=FECHA_MINIMA,
-      max_value=FECHA_MAXIMA,
-      help="Seleccione la fecha de inicio (Mínimo: Año 2000)",
-  )
-with col2:
-  fecha_termino = st.date_input(
-      "Fecha de Término de Contrato",
-      value=FECHA_MAXIMA,
-      min_value=FECHA_MINIMA,
-      max_value=FECHA_MAXIMA,
-      help="Seleccione la fecha de término (Máximo: Año en curso)",
+      "Fecha de Inicio de Contrato", value=datetime(2022, 1, 1)
   )
 
-sueldo_base = st.number_input(
-    "Sueldo Base Mensual (CLP $)", min_value=0, value=600000, step=10000
+with col2:
+  fecha_termino = st.date_input("Fecha de Término de Contrato")
+
+st.header("2. Remuneración y Causal")
+
+# Entrada ajustada según Art. 172 del Código del Trabajo
+remuneracion_imponible = st.number_input(
+    "Remuneración Mensual Imponible Total (CLP $)",
+    min_value=0,
+    value=750000,
+    step=10000,
+    help=(
+        "Sueldo base + gratificación legal mensual + bonos fijos e imponibles"
+        " regulares."
+    ),
 )
 
-st.subheader("Causal de Término de Contrato")
+st.info(
+    "💡 **Nota legal (Art. 172):** Para las indemnizaciones de años de servicio"
+    " y mes de aviso, la ley exige considerar la **última remuneración"
+    " imponible completa** (incluyendo gratificación mensual y bonos fijos),"
+    " excluyendo horas extras o asignaciones no imponibles."
+)
+
 motivo = st.selectbox(
-    "Seleccione la causal legal correspondiente:",
+    "Causal de Término de Contrato",
     [
         "Necesidades de la empresa (Art. 161)",
         "Renuncia voluntaria (Art. 159 N° 2)",
@@ -275,144 +171,99 @@ motivo = st.selectbox(
     ],
 )
 
+aviso_previo = "No aplica"
 if "Art. 161" in motivo:
-  st.info(
-      "💡 **Efecto legal:** Esta causal genera derecho a Indemnización por"
-      " Años de Servicio y Mes de Aviso (si corresponde)."
-  )
-else:
-  st.warning(
-      "ℹ️ **Efecto legal:** Esta causal **no** genera indemnización por años de"
-      " servicio. Solo considera feriado proporcional y haberes pendientes."
+  aviso_previo = st.radio(
+      "¿El empleador le dio el aviso previo con 30 días de anticipación?",
+      ["Sí", "No"],
   )
 
-st.subheader("¿Se dio aviso previo con 30 días de anticipación?")
-aviso_previo = st.radio(
-    "Aviso previo", ["Sí", "No (Corresponde indemnización)"]
-)
-
-# --- SECCIÓN 2: HABERES Y TURNOS EXTRAS ---
-st.header("2. Turnos Extras y Haberes Pendientes")
-
-monto_extras = st.number_input(
-    "Monto por Turnos Extras / Horas Extras pendientes (CLP $)",
-    min_value=0,
-    value=0,
-    step=5000,
-)
-
+st.header("3. Vacaciones / Feriado Anual")
 dias_vacaciones_tomadas = st.number_input(
-    "Días de vacaciones tomados en el último periodo",
-    min_value=0,
-    max_value=30,
-    value=0,
+    "Días hábiles de vacaciones ya tomados/gozados",
+    min_value=0.0,
+    value=0.0,
+    step=0.5,
 )
-
-st.divider()
 
 # --- LÓGICA DE CÁLCULO ---
-if st.button("📊 Calcular Finiquito Exacto", use_container_width=True):
-  if fecha_termino < fecha_inicio:
+if st.button("📊 Calcular Finiquito"):
+  if fecha_termino <= fecha_inicio:
     st.error(
-        "❌ **Error en las fechas:** La fecha de término no puede ser anterior"
-        " a la fecha de inicio del contrato. Por favor corrija la fecha e"
-        " intente de nuevo."
+        "La fecha de término debe ser posterior a la fecha de inicio del"
+        " contrato."
     )
-    st.session_state["calculado"] = False
   else:
     dias_trabajados = (fecha_termino - fecha_inicio).days
 
-    if dias_trabajados == 0:
-      st.error(
-          "❌ **Error en las fechas:** La fecha de término debe ser al menos"
-          " un día posterior a la fecha de inicio."
-      )
-      st.session_state["calculado"] = False
-    else:
-      anios_completos = dias_trabajados // 365
-      meses_remanentes = (dias_trabajados % 365) // 30
+    # 1. Años de Servicio (Art. 161 y 163)
+    anios_completos = dias_trabajados // 365
+    meses_remanentes = (dias_trabajados % 365) // 30
 
+    anios_indemnizacion = 0
+    monto_anios = 0
+
+    if "Art. 161" in motivo:
       anios_indemnizacion = anios_completos
       if anios_completos >= 1 and meses_remanentes >= 6:
         anios_indemnizacion += 1
-
       anios_indemnizacion = min(anios_indemnizacion, 11)
+      monto_anios = anios_indemnizacion * remuneracion_imponible
 
-      if "Art. 161" in motivo:
-        monto_anos_servicio = sueldo_base * anios_indemnizacion
-      else:
-        monto_anos_servicio = 0
+    # 2. Mes de Aviso Previo
+    monto_aviso = 0
+    if "Art. 161" in motivo and aviso_previo == "No":
+      monto_aviso = remuneracion_imponible
 
-      if "Art. 161" in motivo and "No" in aviso_previo:
-        monto_aviso_previo = sueldo_base
-      else:
-        monto_aviso_previo = 0
+    # 3. Feriado Proporcional (Art. 73)
+    meses_totales = dias_trabajados / 30
+    dias_vacaciones_ganados = meses_totales * 1.25
+    dias_vacaciones_pendientes = max(
+        0.0, dias_vacaciones_ganados - dias_vacaciones_tomadas
+    )
 
-      meses_totales = dias_trabajados / 30
-      dias_vacaciones_ganados = meses_totales * 1.25
-      dias_vacaciones_pendientes = max(
-          0, dias_vacaciones_ganados - dias_vacaciones_tomadas
-      )
+    sueldo_diario = remuneracion_imponible / 30
+    monto_feriado = dias_vacaciones_pendientes * sueldo_diario
 
-      sueldo_diario = sueldo_base / 30
-      monto_feriado = dias_vacaciones_pendientes * sueldo_diario
+    # Total
+    total_finiquito = monto_anios + monto_aviso + monto_feriado
 
-      total_finiquito = (
-          monto_anos_servicio
-          + monto_aviso_previo
-          + monto_feriado
-          + monto_extras
-      )
+    # --- RESULTADOS EN PANTALLA ---
+    st.success("### Resultado de la Estimación")
 
-      st.session_state["total_finiquito"] = total_finiquito
-      st.session_state["desglose_texto"] = f"""
-    - **Tiempo trabajado:** {anios_completos} años y {meses_remanentes} meses ({dias_trabajados} días totales).
-    - **Indemnización Años de Servicio:** {formato_clp(monto_anos_servicio)} ({anios_indemnizacion} años reconocidos por ley)
-    - **Indemnización Mes de Aviso Previo:** {formato_clp(monto_aviso_previo)}
-    - **Feriado Proporcional ({dias_vacaciones_pendientes:.1f} días):** {formato_clp(monto_feriado)}
-    - **Turnos extras / Haberes pendientes:** {formato_clp(monto_extras)}
-    """
+    st.metric("Total Estimado de Finiquito", f"${total_finiquito:,.0f} CLP")
 
-      st.session_state["pdf_bytes"] = generar_pdf_comprobante(
-          fecha_inicio,
-          fecha_termino,
-          sueldo_base,
-          motivo,
-          aviso_previo,
-          dias_trabajados,
-          monto_anos_servicio,
-          monto_aviso_previo,
-          monto_feriado,
-          monto_extras,
-          total_finiquito,
-      )
-      st.session_state["calculado"] = True
+    st.markdown("#### Desglose de Rubros:")
+    st.write(
+        f"- **Indemnización por Años de Servicio ({anios_indemnizacion}"
+        f" años):** ${monto_anios:,.0f} CLP"
+    )
+    st.write(
+        "- **Indemnización Sustitutiva Mes de Aviso:**"
+        f" ${monto_aviso:,.0f} CLP"
+    )
+    st.write(
+        f"- **Feriado Proporcional ({dias_vacaciones_pendientes:.1f} días"
+        f" pendientes):** ${monto_feriado:,.0f} CLP"
+    )
 
-# Despliegue de resultados y descarga de PDF
-if st.session_state.get("calculado", False):
-  st.success("¡Cálculo realizado con éxito!")
-  st.metric(
-      "TOTAL A PAGAR POR EL EMPLEADOR",
-      formato_clp(st.session_state["total_finiquito"]),
-  )
+    # --- BOTÓN DESCARGA PDF ---
+    pdf_bytes = generar_pdf(
+        fecha_inicio,
+        fecha_termino,
+        remuneracion_imponible,
+        motivo,
+        aviso_previo,
+        dias_trabajados,
+        anios_indemnizacion,
+        monto_anios,
+        monto_aviso,
+        dias_vacaciones_pendientes,
+        monto_feriado,
+        total_finiquito,
+    )
 
-  st.subheader("Desglose detallado del finiquito:")
-  st.markdown(st.session_state["desglose_texto"])
-
-  st.divider()
-  st.subheader("📄 Descargar Comprobante")
-  st.download_button(
-      label="⬇️ Descargar Comprobante en PDF",
-      data=st.session_state["pdf_bytes"],
-      file_name=(
-          f"Comprobante_Finiquito_{datetime.date.today().strftime('%Y%m%d')}.pdf"
-      ),
-      mime="application/pdf",
-      use_container_width=True,
-  )
-
-st.divider()
-st.caption(
-    "👨‍💻 Aplicación desarrollada por **Adrian Cazor** | Ingeniería en"
-    " Administración de Empresas"
-)
+    st.download_button(
+        label="📄 Descargar Comprobante en PDF",
+        data=bytes(pdf_bytes),
+        file_name=f"finiquito_estimado_{fecha_termino.strftime('%Y%m%d')}.pdf

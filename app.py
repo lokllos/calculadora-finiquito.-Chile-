@@ -40,7 +40,7 @@ class PDF(FPDF):
     self.cell(
         0,
         5,
-        "Desarrollado por Adrián Cazor- Ingeniería en Administración de"
+        "Desarrollado por Adrián Cazor - Ingeniería en Administración de"
         " Empresas",
         border=False,
         ln=True,
@@ -150,7 +150,7 @@ def generar_pdf(
 # --- INTERFAZ STREAMLIT ---
 st.title("⚖️ Calculadora de Finiquito Laboral Chile")
 st.caption(
-    "👨‍💻 **Desarrollado por Adrián Cazorla** | Ingeniería en Administración de"
+    "👨‍💻 **Desarrollado por Adrián Cazor** | Ingeniería en Administración de"
     " Empresas"
 )
 st.markdown(
@@ -258,58 +258,4 @@ if btn_calcular:
     )
 
     sueldo_diario = remuneracion_imponible / 30
-    monto_feriado = dias_vacaciones_pendientes * sueldo_diario
-
-    # Total
-    total_finiquito = monto_anios + monto_aviso + monto_feriado
-
-    # --- RESULTADOS EN PANTALLA ---
-    st.success("### Resultado de la Estimación")
-
-    st.metric("Total Estimado de Finiquito", formatear_clp(total_finiquito))
-
-    st.markdown("#### Desglose de Rubros:")
-    st.write(
-        f"- **Indemnización por Años de Servicio ({anios_indemnizacion}"
-        f" años):** {formatear_clp(monto_anios)}"
-    )
-    st.write(
-        "- **Indemnización Sustitutiva Mes de Aviso:**"
-        f" {formatear_clp(monto_aviso)}"
-    )
-    st.write(
-        f"- **Feriado Proporcional ({dias_vacaciones_pendientes:.1f} días"
-        f" pendientes):** {formatear_clp(monto_feriado)}"
-    )
-
-    # --- BOTÓN DESCARGA PDF ---
-    pdf_bytes = generar_pdf(
-        fecha_inicio,
-        fecha_termino,
-        remuneracion_imponible,
-        motivo,
-        aviso_previo,
-        dias_trabajados,
-        anios_indemnizacion,
-        monto_anios,
-        monto_aviso,
-        dias_vacaciones_pendientes,
-        monto_feriado,
-        total_finiquito,
-    )
-
-    nombre_pdf = f"finiquito_estimado_{fecha_termino.strftime('%Y%m%d')}.pdf"
-
-    st.download_button(
-        label="📄 Descargar Comprobante en PDF",
-        data=bytes(pdf_bytes),
-        file_name=nombre_pdf,
-        mime="application/pdf",
-        use_container_width=True,
-    )
-
-st.markdown("---")
-st.caption(
-    "📌 *Desarrollado por **Adrián Cazorla** | Ingeniería en Administración de"
-    " Empresas*"
-)
+    monto_feriado = dias_vacaciones

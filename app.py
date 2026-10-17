@@ -266,4 +266,4 @@ if st.button("📊 Calcular Finiquito"):
     st.download_button(
         label="📄 Descargar Comprobante en PDF",
         data=bytes(pdf_bytes),
-        file_name=f"finiquito_estimado_{fecha_termino.strftime('%Y%m%d')}.pdf
+        file_name=f"finiquito_estimado_{fecha_termino.strftime('%Y%m%d')}.pdf,
